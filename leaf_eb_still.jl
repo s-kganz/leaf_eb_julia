@@ -129,6 +129,34 @@ another system.
     end ~ track(u"mol / m^2 / s")
 end
 
+
+"""
+This is a largely empirical model of conductances for a pine needle taken from the 
+supplemental material of the source paper. This should be modified if studying
+another system.
+"""
+@system BroadleafConductance(Controller, Air, Leaf, UnifiedStomatalConductance) begin
+    # Environmental input
+    u: wind_speed => 0.5 ~ preserve(parameter, u"m/s")
+
+    # Constants
+    σ: stefan_boltzmann_const => 5.67e-8 ~ preserve(parameter, u"W / m^2 / K^4")
+
+    # This is empirical so we have to try very hard to make Unitful happy
+    gbH(u, d, rho_mol): boundary_layer_conductance => begin
+        fudge_const = 0.015u"m / s^0.5"
+        fudge_const * rho_mol * u^0.5 / d^0.5
+    end ~ track(u"mol / m^2 / s")
+
+    gR(rho_mol, rho, α_LW, σ, Ta, cp): radiative_conductance => begin
+        2 * rho_mol * (4 * α_LW * σ * Ta^3) / (rho * cp)
+    end ~ track(u"mol / m^2 / s")
+
+    gtot(gs, gbH): total_conductance => begin
+        (gs^-1 + gbH^-1)^-1
+    end ~ track(u"mol / m^2 / s")
+end
+
 """
 This system defines net radiation *at the leaf surface*. We can think of 
 this as "isothermal" net radiation since it does not consider the temperature
@@ -188,8 +216,17 @@ should be manipulated when leaf temperature is the desired output.
 @system LeafTemperature_Still(LatentHeat, NeedleleafConductance, Air, Controller) begin
     Y(gbH, gR): conductance_ratio => gbH / (gbH + gR) ~ track()
 
-    dT(Y, Rn, LE, cp, Mair, gbH): delta_t => begin
-        Y * (Rn - LE) / (cp * Mair * gbH)
+    # Partition these forcings so they are easy to compare
+    dT_Rn(Y, Rn, cp, Mair, gbH): Rn_forcing => begin
+        Y * Rn / (cp * Mair * gbH)
+    end ~ track(u"K")
+
+    dT_LE(Y, LE, cp, Mair, gbH): LE_forcing => begin
+        -Y * LE / (cp * Mair * gbH)
+    end ~ track(u"K")
+    
+    dT(dT_Rn, dT_LE): delta_t => begin
+        dT_Rn + dT_LE
     end ~ track(u"K")
 
     T_leaf(dT, Ta): leaf_temperature => begin

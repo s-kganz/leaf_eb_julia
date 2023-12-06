@@ -213,7 +213,17 @@ end
 This final module actually calculates the delta-T term as specified in the paper. This system
 should be manipulated when leaf temperature is the desired output.
 """
-@system LeafTemperature_Still(LatentHeat, NeedleleafConductance, Air, Controller) begin
+@system LeafTemperature_Still(Controller) begin
+
+    # Variables provided by mixins
+    gbH ~ hold
+    gR ~ hold
+    Mair ~ hold
+    cp ~ hold
+    Rn ~ hold
+    LE ~ hold
+    Ta ~ hold
+    
     Y(gbH, gR): conductance_ratio => gbH / (gbH + gR) ~ track()
 
     # Partition these forcings so they are easy to compare

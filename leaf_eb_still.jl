@@ -15,7 +15,7 @@ to these parameters.
     Mwater: molar_mass_water => 0.018 ~ preserve(parameter, u"kg / mol")
     Maw(Mair, Mwater): molar_mass_ratio => Mwater / Mair ~ track()
     R: gas_constant => 8.314 ~ preserve(parameter, u"J / K / mol")
-    λ: heat_of_vaporization => 40.66e3 ~ preserve(parameter, u"J / mol")
+    λ: heat_of_vaporization => 44.2e3 ~ preserve(parameter, u"J / mol")
 
     # Atmospheric conditions
     Ta: air_temperature => 298 ~ preserve(parameter, u"K")
